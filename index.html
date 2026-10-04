@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circle Modulation Studio — Interactive Circle of Fifths & Practice Trainer</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- ABCJS for Vector Musical Notation Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/abcjs@6.4.4/dist/abcjs-basic-min.js"></script>
+</head>
+<body>
+
+  <!-- Top App Navigation -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="brand-icon">♮</div>
+      <div>
+        <div class="brand-title">Circle Modulation Studio</div>
+        <div class="brand-subtitle">Interactive Circle of Fifths & Keyboard Practice</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <!-- Duration Toggle: Quarter Note 2-Bar vs Whole Note 5-Bar -->
+      <div class="view-toggle">
+        <button id="btn-format-quarter" class="btn-toggle active" title="2-measure compact play-along format">2 Bars (Quarter)</button>
+        <button id="btn-format-whole" class="btn-toggle" title="5-measure full chorale format">5 Bars (Whole)</button>
+      </div>
+
+      <!-- View Layout Toggle: Split vs 12-Key Scrolling -->
+      <div class="view-toggle">
+        <button id="btn-view-split" class="btn-toggle active" title="Interactive Circle + Focused Score">Circle & Focus</button>
+        <button id="btn-view-grid" class="btn-toggle" title="Continuous vertical scrolling view with active modulation tracking">12-Key Scrolling</button>
+      </div>
+
+      <!-- Layout Style for 12-Key Scrolling (Stream vs Grid) -->
+      <div id="scrolling-layout-toggle" class="view-toggle" style="display: none;">
+        <button id="btn-layout-stream" class="btn-toggle active" title="1-Column Sheet Music Stream">1 Column</button>
+        <button id="btn-layout-grid" class="btn-toggle" title="3-Column Compact Grid">3 Columns</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <main class="app-main">
+
+    <!-- Metronome & Play-Along Transport Controls -->
+    <section class="transport-bar">
+      <div class="transport-left">
+        <!-- Play / Pause Metronome & Auto-Advance -->
+        <button id="btn-play" class="btn-play" aria-label="Play or Pause Metronome" title="Start / Stop Metronome (Spacebar)">▶</button>
+
+        <!-- Tempo Controls -->
+        <div class="tempo-control">
+          <div class="tempo-display">
+            <span id="bpm-display" class="bpm-number">72</span>
+            <span class="bpm-label">BPM</span>
+          </div>
+          <button id="btn-bpm-minus" class="btn-stepper">−</button>
+          <input type="range" id="bpm-slider" class="tempo-slider" min="40" max="180" value="72">
+          <button id="btn-bpm-plus" class="btn-stepper">+</button>
+          <button id="btn-tap-tempo" class="btn-tap">Tap</button>
+        </div>
+
+        <!-- Beat Dots Visualizer -->
+        <div class="beat-dots" title="Metronome Beat Pulse">
+          <div class="beat-dot downbeat"></div>
+          <div class="beat-dot"></div>
+          <div class="beat-dot"></div>
+          <div class="beat-dot"></div>
+        </div>
+      </div>
+
+      <!-- Audio & Display Toggles -->
+      <div class="transport-right">
+        <!-- Chords Backing Sound -->
+        <div class="toggle-group" title="Hear synth chords play along">
+          <span>Chords:</span>
+          <label class="custom-switch">
+            <input type="checkbox" id="switch-chords" checked>
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+
+        <!-- Metronome Click -->
+        <div class="toggle-group" title="Hear metronome clicks">
+          <span>Click:</span>
+          <label class="custom-switch">
+            <input type="checkbox" id="switch-metronome" checked>
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+
+        <!-- Roman Numerals Display -->
+        <div class="toggle-group" title="Show/Hide Roman numerals and figured bass">
+          <span>Theory Labels:</span>
+          <label class="custom-switch">
+            <input type="checkbox" id="switch-roman">
+            <span class="slider-switch"></span>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 1: Split View (Interactive SVG Circle + Focused Sheet Music) -->
+    <section id="split-view-section" class="split-view">
+      <!-- Left Column: The Interactive Circle of Fifths -->
+      <div class="circle-card">
+        <div class="circle-header">
+          <span class="card-heading">Circle of Fifths</span>
+          <span class="badge">Click Key to Modulate</span>
+        </div>
+
+        <!-- Interactive SVG Render Target -->
+        <div id="circle-container" class="circle-container"></div>
+
+        <!-- Navigation Buttons -->
+        <div class="circle-nav-controls">
+          <button id="btn-prev-key" class="btn-nav" title="Previous Key (Left Arrow)">◀ Previous Key</button>
+          <button id="btn-next-key" class="btn-nav" title="Next Key Clockwise (Right Arrow)">Next Key Clockwise ▶</button>
+        </div>
+      </div>
+
+      <!-- Right Column: Focused Grand Staff Score & Theory Analysis -->
+      <div class="focused-card">
+        <div class="notation-header">
+          <div class="notation-title-group">
+            <div id="focused-title" class="notation-title">Modulation Score</div>
+            <div id="focused-subtitle" class="notation-subtitle">Voice-Leading & Keyboard Notation</div>
+          </div>
+          <div id="active-chord-name" class="badge">Ready</div>
+        </div>
+
+        <!-- ABC Notation Render Target -->
+        <div id="focused-notation-container" class="paper-wrapper"></div>
+
+        <!-- 4-Voice Contrapuntal Breakdown -->
+        <div class="voice-blueprint-box">
+          <div class="blueprint-title">Harmonic Blueprint & Voice Leading</div>
+          <div class="voice-rows">
+            <span class="voice-label">Target Key:</span>
+            <span id="theory-target-key" class="voice-desc">G Major</span>
+
+            <span class="voice-label">Soprano:</span>
+            <span id="theory-pedal" class="voice-desc">G5 (Common Inverted Pedal)</span>
+
+            <span class="voice-label">Alto:</span>
+            <span id="theory-alto" class="voice-desc">E5 → D5 → C♯5 → C5 → B4 (Descending 6̂ → 5̂ → ♯4̂ → ♮4̂ → 3̂)</span>
+
+            <span class="voice-label">Tenor:</span>
+            <span id="theory-tenor" class="voice-desc">C5 → B♭4 → A4 → A♭4 → G4 (Parallel 10ths with Bass)</span>
+
+            <span class="voice-label">Bass (LH):</span>
+            <span id="theory-bass" class="voice-desc">C2,C3 → B♭2,B♭3 → A2,A3 → A♭2,A♭3 → G2,G3 (Octaves)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: 12-Key Overview Grid (All 12 Modulations, Active highlighted, others in light gray) -->
+    <section id="grid-view-section" class="grid-view-container" style="display: none;"></section>
+
+    <!-- Keyboard Shortcuts Help -->
+    <footer class="footer-shortcuts">
+      <span><span class="kbd">Space</span> Play/Pause Metronome</span>
+      <span><span class="kbd">←</span> / <span class="kbd">→</span> Change Key</span>
+      <span><span class="kbd">M</span> Mute Click</span>
+      <span><span class="kbd">C</span> Mute Chords</span>
+    </footer>
+
+  </main>
+
+  <!-- Application Scripts -->
+  <script src="modulations_data.js"></script>
+  <script src="audio.js"></script>
+  <script src="circle.js"></script>
+  <script src="notation.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
