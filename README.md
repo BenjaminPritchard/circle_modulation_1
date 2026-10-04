@@ -10,7 +10,6 @@ An interactive, responsive Circle of Fifths practice trainer and musical score v
 
 ## Screenshot
 
-<!-- Screenshot Placeholder: Will be captured once deployed -->
 ![Circle Modulation Studio Screenshot](./screenshot.png)
 
 ---
